@@ -3,7 +3,7 @@
 
 Original itemized-receipt style meme: a fan's bill of GTA 6 grievances,
 paid by their AI agent via make.fun. Rendered with PIL at 2x supersample
-and downscaled to 1280x960 for smoothness.
+and downscaled to 1280x1120 for smoothness.
 """
 import os
 import urllib.request
@@ -11,7 +11,7 @@ import urllib.request
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 SS = 2  # supersample factor
-W, H = 1280 * SS, 960 * SS
+W, H = 1280 * SS, 1120 * SS
 
 ASSET_DIR = "/tmp/receipt-assets"
 GHOST_URL = "https://make.fun/press/mark-1024.png"
@@ -84,7 +84,7 @@ def main():
     ]).convert("RGBA")
 
     # ---------- card shadow + body ----------
-    card_x0, card_y0, card_x1, card_y1 = S(70), S(56), S(1210), S(904)
+    card_x0, card_y0, card_x1, card_y1 = S(70), S(56), S(1210), S(1064)
     radius = S(36)
     shadow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
     sd = ImageDraw.Draw(shadow)
@@ -144,30 +144,58 @@ def main():
     emoji_cx = (inner_r // SS) - 20  # final-scale centre x of emoji column
     val_right = inner_r - S(emoji_size + 22)  # values end before emoji column
 
-    for i, (label, value, cp) in enumerate(items):
-        cy = items_top + i * row_h
+    def draw_row(cy, label, value, cps):
+        """One itemized line: label, dotted leader, bold value, trailing emoji(s)."""
+        n = len(cps)
+        block_w = n * emoji_size + (n - 1) * 6
+        block_right = inner_r - S(2)
+        v_right = block_right - S(block_w + 20)
         baseline = cy + S(6)
         d.text((inner_l, baseline), label, font=lab_f, fill=(25, 25, 25))
         vw = text_w(d, value, val_f)
-        d.text((val_right - vw, baseline), value, font=val_f, fill=(25, 25, 25))
+        d.text((v_right - vw, baseline), value, font=val_f, fill=(25, 25, 25))
         # dotted leader between label and value
         lab_end = inner_l + text_w(d, label, lab_f) + S(12)
         dot_y = baseline + S(24)
         x = lab_end
-        while x < val_right - vw - S(14):
+        while x < v_right - vw - S(14):
             d.ellipse([x, dot_y, x + S(3.4), dot_y + S(3.4)], fill=(150, 150, 150))
             x += S(11)
-        paste_emoji(bg, cp, emoji_cx, (cy // SS) + 24, emoji_size)
+        for j, cp in enumerate(cps):
+            cx = (block_right - S(block_w)) // SS + j * (emoji_size + 6) + emoji_size // 2
+            paste_emoji(bg, cp, cx, (cy // SS) + 24, emoji_size)
+
+    for i, (label, value, cp) in enumerate(items):
+        draw_row(items_top + i * row_h, label, value, [cp])
+
+    # ---------- Jason & Lucia section ----------
+    jl_items = [
+        ("Lucia's prison sentence", "DONE. WE'RE STILL WAITING", ["1f494"]),
+        ("Jason & Lucia surviving the ending", "PLEASE SURVIVE", ["1f64f", "1f494"]),
+    ]
+    jl_head_y = items_top + len(items) * row_h + S(16)
+    jl_head_f = font(FONT_BOLD, 25)
+    jl_head_txt = "JASON & LUCIA"
+    d.text((inner_l, jl_head_y), jl_head_txt, font=jl_head_f, fill=(207, 18, 128))
+    jw = text_w(d, jl_head_txt, jl_head_f)
+    paste_emoji(bg, "1f494", (inner_l + jw) // SS + 24, (jl_head_y // SS) + 15, 30)
+    jl_top = jl_head_y + S(44)
+    for i, (label, value, cps) in enumerate(jl_items):
+        draw_row(jl_top + i * row_h, label, value, cps)
 
     # ---------- divider + total ----------
-    div_y = items_top + len(items) * row_h + S(8)
+    div_y = jl_top + len(jl_items) * row_h + S(10)
     d.line([inner_l, div_y, inner_r, div_y], fill=(30, 30, 30), width=S(3))
-    total_f = font(FONT_BOLD, 41)
-    total_txt = "TOTAL DUE: ONE GAME. FINALLY."
+    total_txt = "TOTAL DUE: ONE GAME + ONE HAPPY ENDING FOR JASON & LUCIA"
+    total_size = 36
+    total_f = font(FONT_BOLD, total_size)
+    while total_size > 20 and text_w(d, total_txt, total_f) > (inner_r - inner_l) - S(64):
+        total_size -= 1
+        total_f = font(FONT_BOLD, total_size)
     total_y = div_y + S(20)
     d.text((inner_l, total_y), total_txt, font=total_f, fill=(17, 17, 17))
     tw = text_w(d, total_txt, total_f)
-    paste_emoji(bg, "1f389", (inner_l + tw) // SS + 34, (total_y // SS) + 26, 42)
+    paste_emoji(bg, "1f494", (inner_l + tw) // SS + 30, (total_y // SS) + total_size // 2 + 4, 36)
 
     # ---------- red stamp ----------
     stamp_txt = "PAID · NOV 19, 2026"
@@ -213,7 +241,7 @@ def main():
     paste_emoji(bg, "1f4b0", (gx + sw) // SS + 24, (band_y0 // SS) + 84 + 14, 30)
 
     # ---------- save ----------
-    out = bg.convert("RGB").resize((1280, 960), Image.LANCZOS)
+    out = bg.convert("RGB").resize((1280, 1120), Image.LANCZOS)
     out.save(OUT, "PNG")
     print("saved", OUT, out.size)
 
