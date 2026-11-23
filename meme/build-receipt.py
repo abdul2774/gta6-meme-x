@@ -110,10 +110,26 @@ def main():
     d = ImageDraw.Draw(bg)
 
     paste_emoji(bg, "1f9fe", 70 + 62, 56 + 59, 66)  # receipt icon
-    title_f = font(FONT_BOLD, 53)
     sub_f = font(FONT_BOLD, 23)
     tx = card_x0 + S(112)
-    d.text((tx, card_y0 + S(16)), "THE WAITING RECEIPT", font=title_f, fill=(255, 255, 255))
+    # Title: "JASON <broken-heart twemoji> LUCIA RECEIPT", auto-fit to one line.
+    title_left, title_right = "JASON", "LUCIA RECEIPT"
+    title_size = 53
+    heart_pad = 12  # final-scale px on each side of the heart
+    while title_size > 20:
+        title_f = font(FONT_BOLD, title_size)
+        lw = text_w(d, title_left, title_f)
+        rw = text_w(d, title_right, title_f)
+        total_w = lw + S(heart_pad) + S(title_size) + S(heart_pad) + rw
+        if tx + total_w <= inner_r:
+            break
+        title_size -= 1
+    title_y = card_y0 + S(16)
+    d.text((tx, title_y), title_left, font=title_f, fill=(255, 255, 255))
+    heart_cx = (tx + lw + S(heart_pad) + S(title_size) // 2) // SS
+    paste_emoji(bg, "1f494", heart_cx, (title_y // SS) + title_size // 2 + 2, title_size)
+    d.text((tx + lw + S(heart_pad) + S(title_size) + S(heart_pad), title_y),
+           title_right, font=title_f, fill=(255, 255, 255))
     d.text((tx, card_y0 + S(80)), "GRAND THEFT AUTO VI · FAN ACCOUNT STATEMENT",
            font=sub_f, fill=(255, 216, 61))
 
