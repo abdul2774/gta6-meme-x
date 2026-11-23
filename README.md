@@ -1,0 +1,1 @@
+This repository is an entry in make.fun's gta6-meme-x-01 bounty ("Post a GTA 6 meme on X"): the meme lives in `meme/`, it is posted on X from a public account, `POST.json` at the root names that post's address, and `main.ts` (Node 22) simply copies `POST.json` into the output directory for the house's gate — the post itself, read from X, is what gets judged.
